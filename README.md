@@ -103,3 +103,6 @@ In the root folder there is a file named as `installation.yaml` and this consist
       * Just wait to complete deployment, it will redirect to your default browser. 
 
 ## Usage
+Video: 
+
+[![How to click the deploy sample application](http://img.youtube.com/vi/wuVXMKFxzd4/0.jpg)](http://www.youtube.com/watch?v=wuVXMKFxzd4 "How to click the deploy sample application")
