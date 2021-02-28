@@ -25,7 +25,7 @@
 
 ## About The Project
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This sample application include Python script and that connect to Mysql through in Kubernetes same namespace but different deployments. Works only local kubernetes(minicube). 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This sample application include Python script and that connect to Mysql through Kubernetes in same namespace but different deployments. Works only local kubernetes(minikube). 
 
 
 
@@ -60,6 +60,9 @@
   * I have dockerize python application as you can reach from Dockerfile. And uploaded it into DockerHub. If you want to use different image you have to change the container image from(Deployments/app.yaml). 
   * `MYSQL_PORT_3306_TCP_ADDR` and `MYSQL_PORT_3306_TCP_PORT` environment variables comes from mysql deployment.
   * If you want to change default username, password and database, you have to check out env variables. 
+  * For developing inside of the Pods, you have to change workdir from Dockerfile to persistent volume path(`/var/lib/mysql`). 
+  * If you would like to develope code temporary, go into running pod and login as bash(`kubectl exec --stdin --tty pod-name -- /bin/bash`), develope or change the code, then restart the gunicorn by pid with (`kill -HUP`) command.
+  * If you would like to fetch images locally instead of docker hub, you have to use [imagePullPolicy](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#container-v1-core). In the app.yaml file add imagePullPolicy:Never into container spec. This command meaning: The image is assumed to exist locally. No attempt is made to pull the image, for detailed documentation please check [here](https://kubernetes.io/docs/concepts/configuration/overview/#container-images). 
 
 #### MySQL Restriction
   * PV mount path same as mysql files path. (/var/lib/mysql)
@@ -103,6 +106,12 @@ In the root folder there is a file named as `installation.yaml` and this consist
       * Just wait to complete deployment, it will redirect to your default browser. 
 
 ## Usage
-Video: 
+Video:
+
+  * Note that: There is no problem whether minikube working or not, build.sh can handle it. If not running will running, else just deploy the application.
 
 [![How to click the deploy sample application](http://img.youtube.com/vi/wuVXMKFxzd4/0.jpg)](http://www.youtube.com/watch?v=wuVXMKFxzd4 "How to click the deploy sample application")
+
+
+Sincerely,
+Oguzhan.
