@@ -1,0 +1,27 @@
+apiVersion: v1 # https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+kind: PersistentVolume # A PersistentVolume (PV) is a piece of storage in the cluster that has been provisioned by an administrator or dynamically provisioned using Storage Classes.
+metadata:
+  name: mysql-pv-volume
+  labels:
+    type: local # https://kubernetes.io/docs/concepts/storage/persistent-volumes/#types-of-persistent-volumes
+spec:
+  storageClassName: sample-app-persist-volume # Name of StorageClass to which this persistent volume belongs.
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteOnce # https://kubernetes3.io/docs/concepts/storage/persistent-volumes/#access-modes
+  persistentVolumeReclaimPolicy: Retain # When the PersistentVolumeClaim is deleted, the PersistentVolume still exists and the volume is considered "released".
+  hostPath:
+    path: "/mnt/data" # HostPath represents a directory on the host. 
+---
+apiVersion: v1 # https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+kind: PersistentVolumeClaim # allow a user to consume abstract storage resources. A PersistentVolumeClaim (PVC) is a request for storage by a user. It is similar to a Pod. Pods consume node resources and PVCs consume PV resources. 
+metadata:
+  name: mysql-pv-claim
+spec:
+  storageClassName: sample-app-persist-volume
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi

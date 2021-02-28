@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment
+  labels:
+    app: db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:5.6
+        env:
+        # https://hub.docker.com/_/mysql @Environment Variables
+        - name: MYSQL_USER
+          value: root
+        
+        - name: MYSQL_PASSWORD
+          value: 48zxCfFGAb9Lf6t
+
+        - name: MYSQL_ROOT_PASSWORD
+          value: 48zxCfFGAb9Lf6t
+
+        - name: MYSQL_DATABASE
+          value: scores
+        
+        ports:
+        - containerPort: 3306
+
+        volumeMounts:
+          - name: mysql-persistent-storage
+          # Debian versions of MySQL packages store the MySQL data in /var/lib/mysql directory by default. 
+          # /var/lib/mysql act as a volume from mysql-pv-claim
+          # Yani alttaki persistenVolumeClaim'in /var/lib/mysql altina baglanmasini ve beraber sink olmasini sagladik
+            mountPath: /var/lib/mysql
+      volumes:
+      # declares the available volume(s),
+        - name: mysql-persistent-storage
+          persistentVolumeClaim:
+          # PersistentVolumeClaimVolumeSource represents a reference to a PersistentVolumeClaim in the same namespace.
+            claimName: mysql-pv-claim
+---
+# Default Type is ClusterIP, Service must be there due to MYSQL_SERVICE_SERVICE_HOST
+# Default Protocol TCP. 
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-service
+  labels:
+    app: db
+spec:
+  ports:
+  - port: 3306
+  selector: # Route service traffic to pods with label keys and values matching this selector.
+    app: db

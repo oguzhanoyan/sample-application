@@ -1,0 +1,150 @@
+# pv.yaml
+apiVersion: v1 # https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+kind: PersistentVolume # A PersistentVolume (PV) is a piece of storage in the cluster that has been provisioned by an administrator or dynamically provisioned using Storage Classes.
+metadata:
+  name: mysql-pv-volume
+  labels:
+    type: local # https://kubernetes.io/docs/concepts/storage/persistent-volumes/#types-of-persistent-volumes
+spec:
+  storageClassName: sample-app-persist-volume # Name of StorageClass to which this persistent volume belongs.
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteOnce # https://kubernetes3.io/docs/concepts/storage/persistent-volumes/#access-modes
+  persistentVolumeReclaimPolicy: Retain # When the PersistentVolumeClaim is deleted, the PersistentVolume still exists and the volume is considered "released".
+  hostPath:
+    path: "/mnt/data" # HostPath represents a directory on the host. 
+---
+apiVersion: v1 # https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+kind: PersistentVolumeClaim # allow a user to consume abstract storage resources. A PersistentVolumeClaim (PVC) is a request for storage by a user. It is similar to a Pod. Pods consume node resources and PVCs consume PV resources. 
+metadata:
+  name: mysql-pv-claim
+spec:
+  storageClassName: sample-app-persist-volume
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+# mysql-server.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment
+  labels:
+    app: db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:5.6
+        env:
+        # https://hub.docker.com/_/mysql @Environment Variables
+        - name: MYSQL_USER
+          value: root
+        
+        - name: MYSQL_PASSWORD
+          value: 48zxCfFGAb9Lf6t
+
+        - name: MYSQL_ROOT_PASSWORD
+          value: 48zxCfFGAb9Lf6t
+
+        - name: MYSQL_DATABASE
+          value: scores
+        
+        ports:
+        - containerPort: 3306
+
+        volumeMounts:
+          - name: mysql-persistent-storage
+          # Debian versions of MySQL packages store the MySQL data in /var/lib/mysql directory by default. 
+          # /var/lib/mysql act as a volume from mysql-pv-claim
+          # Yani alttaki persistenVolumeClaim'in /var/lib/mysql altina baglanmasini ve beraber sink olmasini sagladik
+            mountPath: /var/lib/mysql
+      volumes:
+      # declares the available volume(s),
+        - name: mysql-persistent-storage
+          persistentVolumeClaim:
+          # PersistentVolumeClaimVolumeSource represents a reference to a PersistentVolumeClaim in the same namespace.
+            claimName: mysql-pv-claim
+---
+# Default Type is ClusterIP, Service must be there due to MYSQL_SERVICE_SERVICE_HOST
+# Default Protocol TCP. 
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-service
+  labels:
+    app: db
+spec:
+  ports:
+  - port: 3306
+  selector: # Route service traffic to pods with label keys and values matching this selector.
+    app: db
+---
+# app.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-app-deployment
+  labels:
+    app: sample-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sample-app
+  template:
+    metadata:
+      labels:
+        app: sample-app
+    spec:
+      containers:
+      - name: sample-app
+        # Sample-application Dockerize Gunicorn version From DockerHub
+        # Look at Dockerfile for all details 
+        image: awfullycold/sample-python-application:dev
+        env:
+        # Look Source Code to check all Env.Var.
+          - name: MYSQL_USERNAME
+            value: root 
+
+          - name: MYSQL_PASSWORD
+            value: 48zxCfFGAb9Lf6t
+
+          - name: MYSQL_ROOT_PASSWORD
+            value: 48zxCfFGAb9Lf6t
+
+          - name: MYSQL_INSTANCE_NAME
+            value: scores
+
+          - name: MYSQL_PORT_3306_TCP_ADDR
+            value: "$(MYSQL_SERVICE_SERVICE_HOST)"
+
+          - name: MYSQL_PORT_3306_TCP_PORT
+            value: "$(MYSQL_SERVICE_SERVICE_PORT)"
+
+        ports:
+          # App deployed on port 3000 from app.py
+          - containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sample-app-service
+spec:
+  ports:
+  - port: 3000
+    targetPort: 3000
+    name: http
+  selector:
+    app: sample-app

@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-app-deployment
+  labels:
+    app: sample-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sample-app
+  template:
+    metadata:
+      labels:
+        app: sample-app
+    spec:
+      containers:
+      - name: sample-app
+        # Sample-application Dockerize Gunicorn version From DockerHub
+        # Look at Dockerfile for all details 
+        image: awfullycold/sample-python-application:dev
+        env:
+        # Look Source Code to check all Env.Var.
+          - name: MYSQL_USERNAME
+            value: root 
+
+          - name: MYSQL_PASSWORD
+            value: 48zxCfFGAb9Lf6t
+
+          - name: MYSQL_ROOT_PASSWORD
+            value: 48zxCfFGAb9Lf6t
+
+          - name: MYSQL_INSTANCE_NAME
+            value: scores
+
+          - name: MYSQL_PORT_3306_TCP_ADDR
+            value: "$(MYSQL_SERVICE_SERVICE_HOST)"
+
+          - name: MYSQL_PORT_3306_TCP_PORT
+            value: "$(MYSQL_SERVICE_SERVICE_PORT)"
+
+        ports:
+          # App deployed on port 3000 from app.py
+          - containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sample-app-service
+spec:
+  ports:
+  - port: 3000
+    targetPort: 3000
+    name: http
+  selector:
+    app: sample-app
